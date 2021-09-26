@@ -65,6 +65,10 @@ pub enum Animation {
     ///
     /// Tweening the animation with ease function
     Ease(EaseFunction, Box<Animation>),
+    /// row, column
+    ///
+    /// Changing sprite from spritesheet
+    SetSprite(f64, f64),
 }
 
 impl Animation {
@@ -72,7 +76,7 @@ impl Animation {
     pub fn to_state<I: ImageSize>(&self, sprite: &Sprite<I>) -> AnimationState {
         use Animation::*;
         use AnimationState as S;
-
+    
         match *self {
             MoveTo(dur, dx, dy) => {
                 let (bx, by) = sprite.get_position();
@@ -134,6 +138,7 @@ impl Animation {
             Ease(f, ref animation) => {
                 S::Ease(f, Box::new(animation.to_state(sprite)))
             },
+            SetSprite(row, column) => S::SetSprite(row, column),
         }
     }
 }
@@ -157,6 +162,8 @@ pub enum AnimationState {
     Fade(f64, f64, f64, f64),
     /// ease_function, animation
     Ease(EaseFunction, Box<AnimationState>),
+    /// row, column
+    SetSprite(f64, f64),
 }
 
 impl AnimationState {
@@ -216,7 +223,7 @@ impl AnimationState {
                     Move(t, bx, by, cx, cy, d) => {
                         let factor = ::interpolation::Ease::calc((t + dt) / d, f);
                         update_position(sprite, factor, t + dt,
-                                        bx, by, cx, cy, d)
+                            bx, by, cx, cy, d)
                     },
                     Rotate(t, b, c, d) => {
                         let factor = ::interpolation::Ease::calc((t + dt) / d, f);
@@ -246,6 +253,11 @@ impl AnimationState {
                 } else {
                     (None, status, remain)
                 }
+            },
+            SetSprite(row, column) => {
+                sprite.set_sprite(row, column);
+
+                (None, Success, dt)
             },
         }
     }

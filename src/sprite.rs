@@ -30,6 +30,7 @@ pub struct Sprite<I: ImageSize> {
     children_index: HashMap<Uuid, usize>,
 
     src_rect: Option<SourceRectangle>,
+    spritesheet_size: Option<Vec2d>,
     texture: Rc<I>,
 }
 
@@ -55,6 +56,7 @@ impl<I: ImageSize> Sprite<I> {
 
             texture: texture,
             src_rect: None,
+            spritesheet_size: None,
 
             children: Vec::new(),
             children_index: HashMap::new(),
@@ -82,10 +84,11 @@ impl<I: ImageSize> Sprite<I> {
 
             texture: texture,
             src_rect: From::from(src_rect),
+            spritesheet_size: None,
 
             children: Vec::new(),
             children_index: HashMap::new(),
-        }        
+        }
     }
 
     /// Get the sprite's id
@@ -223,11 +226,36 @@ impl<I: ImageSize> Sprite<I> {
     pub fn get_src_rect(&self) -> Option<SourceRectangle> {
         self.src_rect
     }
-    
+
     /// Set the sprite's source rectangle
     #[inline(always)]
     pub fn set_src_rect(&mut self, src_rect: SourceRectangle) {
         self.src_rect = From::from(src_rect);
+    }
+
+    /// Set the sprite's source rectangle
+    #[inline(always)]
+    pub fn set_sprite(&mut self, row: f64, column: f64) {
+        let size = self.spritesheet_size;
+
+        if let Some([w, h]) = size {
+            self.set_src_rect([column * w, row * h, w, h]);
+        }
+    }
+
+    /// Get the spritesheets size
+    #[inline(always)]
+    pub fn get_spritesheet(&self) -> Option<(Scalar, Scalar)> {
+        match &self.spritesheet_size {
+            Some(spritesheet_size) => Some((spritesheet_size[0], spritesheet_size[1])),
+            None => None,
+        }
+    }
+
+    /// Set to be a spritesheet
+    #[inline(always)]
+    pub fn set_spritesheet(&mut self, w: Scalar, h: Scalar) {
+        self.spritesheet_size = Some([w, h]);
     }
 
     /// Get the sprite's texture
@@ -319,7 +347,7 @@ impl<I: ImageSize> Sprite<I> {
         let source_rectangle = self.src_rect.unwrap_or({
             let (w, h) = (tex_w, tex_h);
             [0.0, 0.0, w as f64, h as f64]
-        });        
+        });
         let anchor = [self.anchor[0] * source_rectangle[2], self.anchor[1] * source_rectangle[3]];
 
         let transformed = t.trans(self.position[0], self.position[1])
